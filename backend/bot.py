@@ -3,6 +3,7 @@ from model import Message
 from swap import MESSAGE_QUEUE
 
 from asyncio import CancelledError, sleep as asleep
+from typing import Optional
 
 from discord import ButtonStyle, Client, Intents, Interaction
 from discord.ui import View, Button
@@ -11,10 +12,6 @@ intents = Intents.default()
 intents.message_content = True
 
 client = Client(intents=intents)
-
-ADMIN_CHANNEL = client.get_channel(CONFIG.discord.channel.admin)
-BROADCAST_CHANNEL = client.get_channel(CONFIG.discord.channel.broadcast)
-
 
 @client.event
 async def on_ready():
@@ -28,17 +25,16 @@ async def on_interaction(interaction: Interaction):
         return
     message = interaction.message
     content = message.content
+    print(interaction.data)
     if interaction.custom_id == "allow":
         pass
     else:
         pass
-    await message.edit(
-        content=content,
-        view=None
-    )
+    # await message.edit(content=content, view=None)
 
 
 async def send_message():
+    channel = client.get_channel(CONFIG.discord.channel.admin)
     try:
         while True:
             if MESSAGE_QUEUE.empty():
@@ -47,30 +43,19 @@ async def send_message():
             message: Message = await MESSAGE_QUEUE.get()
 
             context = [
-                f"Create Time: {message.create_time.isoformat()}",
-                "-----Content Start-----",
+                f"Create Time: <t:{int(message.create_time.timestamp())}:R>",
+                f"Sign: {message.sign}",
+                "------",
                 message.context,
-                f"Sign: {message.sign}"
-                "-----Content End-----",
+                "------",
             ]
 
-            accept = Button(
-                style=ButtonStyle.success,
-                label="Allow",
-                custom_id="allow"
-            )
-            block = Button(
-                style=ButtonStyle.danger,
-                label="Block",
-                custom_id="block"
-            )
-            view = View(
-                accept, block
-            )
+            accept = Button(style=ButtonStyle.success,
+                            label="Allow", custom_id="allow")
+            block = Button(style=ButtonStyle.danger,
+                           label="Block", custom_id="block", )
+            view = View(accept, block)
 
-            await ADMIN_CHANNEL.send(
-                content="\n\n".join(context),
-                view=view
-            )
+            await channel.send(content="\n".join(context), view=view)
     except CancelledError:
         return

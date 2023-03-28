@@ -24,9 +24,9 @@ class APIConfig(BaseModel):
 class Config(BaseModel):
     discord: DiscordConfig
     api: APIConfig
-    tz: timezone = Field(alias="timezone")
+    tz: float = Field(alias="timezone")
 
-    @validator("timezone", pre=True)
+    @validator("tz")
     def timezone_validator(cls, value: Union[timezone, timedelta, float]):
         if type(value) is timedelta:
             value = timezone(value)
