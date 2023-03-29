@@ -4,8 +4,9 @@ from swap import MESSAGE_QUEUE
 
 from asyncio import CancelledError, sleep as asleep
 from datetime import datetime
+from uuid import uuid1
 
-from discord import ButtonStyle, Client, Intents, Interaction
+from discord import ButtonStyle, Client, Embed, Intents, Interaction
 from discord.ui import View, Button
 
 intents = Intents.default()
@@ -13,8 +14,10 @@ intents.message_content = True
 
 client = Client(intents=intents)
 
+
 @client.event
 async def on_ready():
+    print("Start")
     client.loop.create_task(
         send_message(), name="Send message to admin channel.")
 
@@ -61,13 +64,12 @@ async def send_message():
                 continue
             message: Message = await MESSAGE_QUEUE.get()
 
-            context = [
-                f"Create Time: <t:{int(message.create_time.timestamp())}:R>",
-                f"Sign: {message.sign}",
-                "------",
-                message.context,
-                "------",
-            ]
+            uuid = uuid1().hex
+            
+            embed = Embed(title="NCKU CSIE 112 匿名發言系統", color=0xbaff, timestamp=message.create_time)
+            embed.set_author(name=message.sign)
+            embed.add_field(name="內容", value=message.context)
+            embed.set_footer(text=uuid)
 
             accept = Button(style=ButtonStyle.success,
                             label="Allow", custom_id="allow")
@@ -75,6 +77,6 @@ async def send_message():
                            label="Block", custom_id="block", )
             view = View(accept, block)
 
-            await channel.send(content="\n".join(context), view=view)
+            await channel.send(content=f"#{uuid}", embed=embed, view=view)
     except CancelledError:
         return
