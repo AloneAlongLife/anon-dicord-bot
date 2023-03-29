@@ -17,7 +17,6 @@ client = Client(intents=intents)
 
 @client.event
 async def on_ready():
-    print("Start")
     client.loop.create_task(
         send_message(), name="Send message to admin channel.")
 
@@ -27,31 +26,20 @@ async def on_interaction(interaction: Interaction):
     if interaction.channel_id != CONFIG.discord.channel.admin:
         return
     channel = client.get_channel(CONFIG.discord.channel.broadcast)
+
     message = interaction.message
-    content = message.content
+    embed = message.embeds[0]
     if interaction.custom_id == "allow":
+        new_embed = embed.copy()
+        embed.color = 0x00ff00
+        embed.add_field(name="Operation", value=f"Allow by {interaction.user.mention}")
         reply_message = "Allow the message."
-        edit_message = "\n".join(
-            [
-                content,
-                f"Allow by {interaction.user.mention} <t:{int(datetime.now(CONFIG.tz).timestamp())}:R>.",
-            ]
-        )
-        message = "\n".join([
-            content,
-            "匿名發言 >",
-            "成為審查者 >"
-        ])
-        await channel.send(message)
+        await channel.send(embed=new_embed)
     else:
+        embed.color = 0xff0000
+        embed.add_field(name="Operation", value=f"Block by {interaction.user.mention}")
         reply_message = "Block the message."
-        edit_message = "\n".join(
-            [
-                content,
-                f"Block by {interaction.user.mention} <t:{int(datetime.now(CONFIG.tz).timestamp())}:R>.",
-            ]
-        )
-    await interaction.message.edit(content=edit_message, view=None)
+    await interaction.message.edit(embed=embed, view=None)
     await interaction.response.send_message(reply_message, ephemeral=True)
 
 
@@ -64,12 +52,13 @@ async def send_message():
                 continue
             message: Message = await MESSAGE_QUEUE.get()
 
-            uuid = uuid1().hex
+            uuid = str(uuid1())
+            # uuid = uuid1().hex
             
-            embed = Embed(title="NCKU CSIE 112 匿名發言系統", color=0xbaff, timestamp=message.create_time)
-            embed.set_author(name=message.sign)
-            embed.add_field(name="內容", value=message.context)
-            embed.set_footer(text=uuid)
+            embed = Embed(title="NCKU CSIE 112 Anonymous Message", color=0xbaff, timestamp=message.create_time)
+            embed.set_author(name=message.sign, icon_url=client.user.display_avatar.url)
+            embed.add_field(name="Content", value=message.context)
+            embed.set_footer(text=f"UUID: {uuid}")
 
             accept = Button(style=ButtonStyle.success,
                             label="Allow", custom_id="allow")
@@ -77,6 +66,6 @@ async def send_message():
                            label="Block", custom_id="block", )
             view = View(accept, block)
 
-            await channel.send(content=f"#{uuid}", embed=embed, view=view)
+            await channel.send(embed=embed, view=view)
     except CancelledError:
         return

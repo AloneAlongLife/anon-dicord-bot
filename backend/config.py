@@ -2,7 +2,15 @@ from datetime import timedelta, timezone
 from os.path import isfile
 from typing import Union
 
-from orjson import loads, dumps, OPT_INDENT_2
+try:
+    from orjson import loads as rl, dumps as rd, OPT_INDENT_2
+    loads = rl
+    dumps = lambda x: rd(x, option=OPT_INDENT_2)
+except:
+    from json import loads as rl, dumps as rd
+    loads = rl
+    dumps = lambda x: rd(x, indent=2, ensure_ascii=False).encode()
+
 from pydantic import BaseModel, Field, validator
 
 
@@ -55,6 +63,6 @@ else:
         "timezone": float(input("Set timezone (hours)(default: 8) >") or 8)
     }
     with open("config.json", mode="wb") as config_file:
-        config_file.write(dumps(config, option=OPT_INDENT_2))
+        config_file.write(dumps(config))
 
 CONFIG = Config(**config)
