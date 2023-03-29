@@ -3,7 +3,7 @@ from model import Message
 from swap import MESSAGE_QUEUE
 
 from asyncio import CancelledError, sleep as asleep
-from typing import Optional
+from datetime import datetime
 
 from discord import ButtonStyle, Client, Intents, Interaction
 from discord.ui import View, Button
@@ -23,14 +23,33 @@ async def on_ready():
 async def on_interaction(interaction: Interaction):
     if interaction.channel_id != CONFIG.discord.channel.admin:
         return
+    channel = client.get_channel(CONFIG.discord.channel.broadcast)
     message = interaction.message
     content = message.content
-    print(interaction.data)
     if interaction.custom_id == "allow":
-        pass
+        reply_message = "Allow the message."
+        edit_message = "\n".join(
+            [
+                content,
+                f"Allow by {interaction.user.mention} <t:{int(datetime.now(CONFIG.tz).timestamp())}:R>.",
+            ]
+        )
+        message = "\n".join([
+            content,
+            "匿名發言 >",
+            "成為審查者 >"
+        ])
+        await channel.send(message)
     else:
-        pass
-    # await message.edit(content=content, view=None)
+        reply_message = "Block the message."
+        edit_message = "\n".join(
+            [
+                content,
+                f"Block by {interaction.user.mention} <t:{int(datetime.now(CONFIG.tz).timestamp())}:R>.",
+            ]
+        )
+    await interaction.message.edit(content=edit_message, view=None)
+    await interaction.response.send_message(reply_message, ephemeral=True)
 
 
 async def send_message():
