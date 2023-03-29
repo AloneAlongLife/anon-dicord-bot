@@ -1,0 +1,9 @@
+@font-face {
+    font-family: 'MSJH';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: local(Microsoft JhengHei),
+         local(Microsoft-JhengHei),
+         url(msjh.ttc) format("opentype");
+}
